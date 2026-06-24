@@ -1,27 +1,42 @@
+require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const dotenv = require('dotenv');
 const cors = require('cors');
 
-dotenv.config();
+// Route Imports
+const authRoutes = require('./routes/auth');
+const listingRoutes = require('./routes/listings');
+
 const app = express();
 
+// ====================================================================
+// 🛡️ THE CORS VELVET ROPE: Authorize React to knock on our TCP port
+// ====================================================================
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
+  credentials: true
+}));
+
 // Middleware
-app.use(express.json()); 
-app.use(cors());
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/listings', require('./routes/listings')); // <-- ADD THIS LINE
+app.use(express.json());
 
-const PORT = process.env.PORT || 5000;
+// Mount the Routers
+app.use('/api/auth', authRoutes);
+app.use('/api/listings', listingRoutes);
 
-// Database Connection
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('🟢 MongoDB Atlas Connected Successfully'))
-  .catch((err) => console.log('🔴 MongoDB Connection Error: ', err));
-
-// Standard sanity check route
+// Root Health-Check (For Vercel / Render deployment)
 app.get('/', (req, res) => {
-  res.send('GradIntern API is awake.');
+  res.status(200).json({ status: "🟢 Cluster API v1.0 Operational" });
 });
 
-app.listen(PORT, () => console.log(`🚀 Server spinning on port ${PORT}`));
+// Mongoose Handshake
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('🟢 MongoDB Atlas Connected Successfully'))
+  .catch((err) => console.error('🚨 Atlas Connection Failure:', err));
+
+// Port allocation (Locked strictly to 5005 to bypass Windows OS ghosts)
+const PORT = process.env.PORT || 5005;
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server spinning on port ${PORT}`);
+});
