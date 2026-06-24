@@ -3,9 +3,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Register from './pages/Register';
 import Login from './pages/Login';
-
-// Our last remaining cardboard placeholder for Step 4!
-const PostJob = () => <div className="p-20 text-center font-bold text-xl text-slate-600">📢 Post a Job Form (Coming Next)</div>;
+import PostJob from './pages/PostJob'; // <-- ADDED THE REAL IMPORT
 
 export default function App() {
   return (
