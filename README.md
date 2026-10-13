@@ -1,41 +1,140 @@
-# 🎓 GradIntern — Full-Stack RBAC Job Marketplace
+<div align="center">
 
-> A production-grade RESTful career marketplace engineered specifically for verified alumni and enterprise recruiters, featuring strict cryptographic Role-Based Access Control (RBAC).
+# 🎓 GradIntern
 
-![Tech Stack](https://img.shields.io/badge/Stack-React_19_|_Node_|_Express_|_MongoDB-indigo?style=for-the-badge)
-![Security](https://img.shields.io/badge/Auth-Stateless_JWT_|_Bcrypt-emerald?style=for-the-badge)
-![Styling](https://img.shields.io/badge/CSS-Tailwind_v4_|_PostCSS-sky?style=for-the-badge)
+### Full-stack internship marketplace with role-based access control
 
----
+Graduates browse and apply. Recruiters post roles. The API enforces who can do what.
 
-## 🏛️ System Architecture & RBAC Matrix
+![React](https://img.shields.io/badge/React_19-0f172a?logo=react&logoColor=61DAFB)
+![Vite](https://img.shields.io/badge/Vite-0f172a?logo=vite&logoColor=646CFF)
+![Tailwind](https://img.shields.io/badge/Tailwind_4-0f172a?logo=tailwindcss&logoColor=06B6D4)
+![Express](https://img.shields.io/badge/Express_5-0f172a?logo=express&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB_Atlas-0f172a?logo=mongodb&logoColor=47A248)
+![JWT](https://img.shields.io/badge/JWT-0f172a?logo=jsonwebtokens&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-22d3ee)
 
-The platform enforces a strict separation of concerns between client UI state machines and backend validation layers. Access authorization is determined via stateless JSON Web Tokens evaluated at the Express routing middleware layer.
+<img src="docs/screenshots/home.png" alt="GradIntern job board" width="90%"/>
 
-| User Persona | Endpoint Access | Cryptographic Permission | UI Experience |
-| :--- | :--- | :--- | :--- |
-| **👨‍🎓 Graduate** | `GET /api/listings` | `role: 'grad'` | Browse feed, view salary specs, apply |
-| **👔 Recruiter** | `POST /api/listings` | `role: 'recruiter'` | Full broadcasting rights, form rendering |
-| **🤖 Unauthenticated**| None | `401 / 403 Forbidden` | Redirected to `/login` gate |
-
----
-
-## ⚡ Core Engineering Highlights
-
-* **Stateless RBAC Gatekeeper:** Custom Express middleware decodes Bearer tokens in real-time, rejecting unauthorized payload modifications at the network port before Mongoose schema evaluation.
-* **Zero-Dependency Sanitization:** Implemented a strict request-body validation layer protecting NoSQL document stores against malformed string injection and buffer bloating.
-* **Persistent Session Hydration:** Built a custom React `AuthContext` utilizing synchronous `useEffect` mounting sweeps to catch and re-hydrate `localStorage` session tokens instantly across browser reloads.
-* **Dynamic Cloud Bridging:** Frontend fetch pipelines utilize dynamic environment switching (`import.meta.env`) to seamlessly route requests between local Node ports and serverless production URLs.
+</div>
 
 ---
 
-## 🚀 Local Deployment Guide
+## ✨ Features
 
-### Prerequisites
-* **Node.js** (v18.0.0 or higher)
-* **MongoDB Atlas** Cluster URI
+- 🔐 **JWT authentication** with bcrypt-hashed passwords and 1-day tokens
+- 🛂 **Role-based access control**: custom Express middleware verifies the Bearer token, then each route checks the role
+- 🧾 **Payload validation** on job posts (types, lengths, required fields) before anything reaches Mongoose
+- 🔄 **Persistent sessions**: a React `AuthContext` rehydrates the user from `localStorage` on reload
+- 🌐 **Environment-aware API base URL** via `VITE_API_URL`, so the same build works locally and in production
+- 📊 **Live board stats**: active roles, partner companies and hybrid/remote count computed on the client
 
-### 1. Clone the Safe
+## 🛂 Access matrix
+
+| Action | Endpoint | Guest | 🎓 Grad | 👔 Recruiter |
+|---|---|:---:|:---:|:---:|
+| Register | `POST /api/auth/register` | ✅ | ✅ | ✅ |
+| Log in | `POST /api/auth/login` | ✅ | ✅ | ✅ |
+| Browse jobs | `GET /api/listings` | ✅ | ✅ | ✅ |
+| Post a job | `POST /api/listings` | ❌ `401` | ❌ `403` | ✅ |
+
+## 🏛️ Architecture
+
+```mermaid
+flowchart LR
+    subgraph Client [React 19 + Vite]
+        UI[Pages<br/>Home · Login · Register · PostJob] --> CTX[AuthContext<br/>token in localStorage]
+    end
+    CTX -- "Bearer JWT" --> API
+    subgraph API [Express 5 API]
+        R1["/api/auth"] --> BC[bcrypt + jwt.sign]
+        R2["/api/listings"] --> VT[verifyToken] --> RB{role ==<br/>recruiter?} --> VP[validate payload]
+    end
+    BC --> DB[(MongoDB Atlas<br/>Users · Listings)]
+    VP --> DB
+    R2 -- GET --> DB
+```
+
+## 📸 Screenshots
+
+| Sign up with a role | Sign in |
+|---|---|
+| <img src="docs/screenshots/register.png" alt="Register"/> | <img src="docs/screenshots/login.png" alt="Login"/> |
+
+## 🚀 Run locally
+
+**Prerequisites:** Node.js 18+ and a MongoDB Atlas (or local MongoDB) connection string.
+
 ```bash
-git clone [https://github.com/SlazzInC0de/gradintern.git](https://github.com/SlazzInC0de/gradintern.git)
+git clone https://github.com/SlazzInC0de/gradintern.git
 cd gradintern
+```
+
+**1. API**
+
+```bash
+cd backend
+cp .env.example .env        # fill in MONGO_URI and a random JWT_SECRET
+npm install
+npm run seed                # optional: sample listings
+npm run dev                 # http://localhost:5005
+```
+
+**2. Frontend** (new terminal)
+
+```bash
+cd frontend
+npm install
+npm run dev                 # http://localhost:5173
+```
+
+Set `VITE_API_URL` in `frontend/.env` when the API is not on `http://localhost:5005`.
+
+**3. Smoke-test RBAC**
+
+```bash
+cd backend
+npm run smoke:register      # create a grad user
+npm run smoke:login         # prints a JWT
+GRAD_TOKEN=<jwt> npm run smoke:rbac   # expect 403: grads cannot post
+```
+
+## ⚙️ Environment variables
+
+| Variable | Where | Purpose |
+|---|---|---|
+| `MONGO_URI` | backend | MongoDB connection string |
+| `JWT_SECRET` | backend | Secret used to sign tokens |
+| `PORT` | backend | API port (default `5005`) |
+| `CLIENT_URL` | backend | Deployed frontend origin allowed by CORS |
+| `VITE_API_URL` | frontend | Base URL of the API |
+
+## 📁 Project structure
+
+```text
+gradintern/
+├── backend/
+│   ├── middleware/verifyToken.js   # Bearer token -> req.user
+│   ├── models/                     # User (grad | recruiter), Listing
+│   ├── routes/                     # auth, listings (RBAC + validation)
+│   ├── scripts/                    # seed + smoke tests
+│   └── server.js
+├── frontend/
+│   └── src/
+│       ├── context/AuthContext.jsx
+│       ├── pages/                  # Home, Login, Register, PostJob
+│       └── config.js               # API base URL
+└── docs/screenshots/
+```
+
+## 🗺️ Roadmap
+
+- [ ] Applications collection so "Apply" persists per user
+- [ ] Recruiter dashboard to edit and close listings
+- [ ] Rate limiting and `helmet` on the API
+- [ ] Jest + Supertest suite for the auth and RBAC paths
+- [ ] Deploy (Render for the API, Vercel for the client)
+
+## 📄 License
+
+MIT © [Suryansh Verma](https://github.com/SlazzInC0de)

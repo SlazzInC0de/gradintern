@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Listing = require('./models/Listing');
-const User = require('./models/user'); // <-- Imported your User model!
+const Listing = require('../models/Listing');
+const User = require('../models/User'); // <-- Imported your User model!
 
 const seedData = [
   {

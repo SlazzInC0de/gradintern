@@ -32,13 +32,13 @@ router.get('/', async (req, res) => {
     const listings = await Listing.find().populate('postedBy', 'name email').sort({ createdAt: -1 });
     res.status(200).json(listings);
   } catch (err) {
-  console.error("🚨 CRITICAL GET /listings ERROR:", err); // <-- THE BUG
-  res.status(500).json({ message: err.message, stack: err.stack });
-}
+    console.error('GET /listings failed:', err);
+    res.status(500).json({ message: 'Failed to load listings' });
+  }
 });
 
 // 2. POST A JOB (Protected - STRICTLY RECRUITERS ONLY)
-router.post('/', verifyToken, async (req, res) => {
+router.post('/', verifyToken, validateListingPayload, async (req, res) => {
   try {
     // THE RBAC CHECK:
     if (req.user.role !== 'recruiter') {

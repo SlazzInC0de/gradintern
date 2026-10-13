@@ -1,8 +1,7 @@
-// Look at the message you just sent me. Copy Sarah's long token sitting inside the single quotes, 
-// and paste it right here between these quotes:
-const SARAH_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTNhYjA3ZDRhY2RhNzVmZDdkZjRmNTYiLCJyb2xlIjoiZ3JhZCIsImlhdCI6MTc4MjIzMTc3MSwiZXhwIjoxNzgyMzE4MTcxfQ.NO7gryTh2XkR19DEG9oSKGo4CYH7yU2LsiC28c6t6h4";
+// Expects a grad user's JWT in GRAD_TOKEN; a 403 response proves RBAC blocks grads from posting.
+const SARAH_TOKEN = process.env.GRAD_TOKEN; // JWT of a "grad" user from loginTest.js
 
-fetch('http://localhost:5000/api/listings', {
+fetch(`${process.env.API_URL || 'http://localhost:5005'}/api/listings`, {
   method: 'POST',
   headers: { 
     'Content-Type': 'application/json',

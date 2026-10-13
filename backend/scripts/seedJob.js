@@ -1,6 +1,6 @@
 async function runRecruiterTest() {
   console.log("1. Registering Richard Hendricks (Recruiter)...");
-  await fetch('http://localhost:5000/api/auth/register', {
+  await fetch(`${process.env.API_URL || 'http://localhost:5005'}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -12,7 +12,7 @@ async function runRecruiterTest() {
   });
 
   console.log("2. Logging Richard in to get his VIP Wristband...");
-  const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+  const loginRes = await fetch(`${process.env.API_URL || 'http://localhost:5005'}/api/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -24,7 +24,7 @@ async function runRecruiterTest() {
   const recruiterToken = loginData.token;
 
   console.log("3. Holding up Richard's token to post a job...");
-  const jobRes = await fetch('http://localhost:5000/api/listings', {
+  const jobRes = await fetch(`${process.env.API_URL || 'http://localhost:5005'}/api/listings`, {
     method: 'POST',
     headers: { 
       'Content-Type': 'application/json',
