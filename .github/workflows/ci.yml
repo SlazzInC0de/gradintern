@@ -20,8 +20,10 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - name: Tests + coverage
+        shell: bash
         run: npm test 2>&1 | tee test-output.txt
       - name: Auth benchmark
+        shell: bash
         run: npm run bench | tee bench-output.txt
       - name: Publish results to job summary
         if: always()
