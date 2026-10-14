@@ -8,7 +8,9 @@
     "seed": "node scripts/seed.js",
     "smoke:register": "node scripts/test.js",
     "smoke:login": "node scripts/loginTest.js",
-    "smoke:rbac": "node scripts/rbacTest.js"
+    "smoke:rbac": "node scripts/rbacTest.js",
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude='test/**' 'test/**/*.test.js'",
+    "bench": "node scripts/bench-auth.js"
   },
   "author": "",
   "license": "MIT",

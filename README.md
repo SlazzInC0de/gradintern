@@ -6,6 +6,8 @@
 
 Graduates browse and apply. Recruiters post roles. The API enforces who can do what.
 
+[![CI](https://github.com/SlazzInC0de/gradintern/actions/workflows/ci.yml/badge.svg)](https://github.com/SlazzInC0de/gradintern/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/API_coverage-100%25-22c55e)
 ![React](https://img.shields.io/badge/React_19-0f172a?logo=react&logoColor=61DAFB)
 ![Vite](https://img.shields.io/badge/Vite-0f172a?logo=vite&logoColor=646CFF)
 ![Tailwind](https://img.shields.io/badge/Tailwind_4-0f172a?logo=tailwindcss&logoColor=06B6D4)
@@ -55,6 +57,43 @@ flowchart LR
     R2 -- GET --> DB
 ```
 
+## 🧪 Tests and evidence
+
+**15 API tests** run on every push with Node's built-in test runner. MongoDB is replaced by in-memory stubs, so the suite needs no database.
+
+| Area | What is checked |
+|---|---|
+| Auth | bcrypt hashing, duplicate email, wrong password and unknown email return the same error |
+| RBAC | no token `401`, forged or expired token `403`, grad posting `403`, recruiter posting `201` |
+| Validation | short or long title, non-string company, short description, missing salary or location, `413` on bodies over 100 kB |
+| Failure handling | a database error returns `500` with a generic message and no stack trace |
+
+**Coverage** (`npm test`): 100% lines and branches across `routes/`, `middleware/` and `models/`. `server.js` only wires up the app and opens the DB connection, so it is not exercised by the suite.
+
+### ⏱️ Auth benchmark
+
+`npm run bench` measures the request path with the database write stubbed out, so only the API layer is timed. Results from one run on a 2 vCPU Xeon @ 2.1 GHz, Node 22:
+
+| Operation | p50 | p95 | p99 |
+|---|---:|---:|---:|
+| `jwt.verify` (HS256), 10k calls | 0.03 ms | 0.07 ms | 0.12 ms |
+| `POST /api/listings` as recruiter: verify + RBAC + validation, `201` | 0.97 ms | 1.36 ms | 3.74 ms |
+| `POST /api/listings` as grad: rejected by RBAC, `403` | 0.49 ms | 0.71 ms | 1.23 ms |
+
+Token checks are not the bottleneck: in production, request time is dominated by the MongoDB round trip. CI re-runs the benchmark and publishes the numbers in each run's summary.
+
+## 🧭 Design decisions
+
+| Decision | Why | Trade-off / alternative |
+|---|---|---|
+| **Stateless JWT** (1-day expiry) instead of server sessions | No session store; any API instance can verify a request | A token cannot be revoked before it expires. A denylist or short-lived access + refresh tokens would fix that |
+| **Role inside the token**, checked per route | One middleware for identity, explicit role checks where they matter | A role change only takes effect on next login |
+| **Hand-written validation middleware** | Zero extra dependencies and clear error messages | A schema library (Zod, Joi) scales better as forms grow |
+| **Same error for unknown email and wrong password** | Does not reveal which emails are registered | Slightly less helpful to genuine users |
+| **Token in `localStorage`** | Simple rehydration on reload | Readable by injected scripts; an `httpOnly` cookie would be safer against XSS |
+| **100 kB JSON body cap** | Cheap protection against oversized payloads | Large descriptions need a higher limit |
+| **Generic `500` messages** | Internals and stack traces never reach the client | Debugging relies on server logs |
+
 ## 📸 Screenshots
 
 | Sign up with a role | Sign in |
@@ -90,7 +129,15 @@ npm run dev                 # http://localhost:5173
 
 Set `VITE_API_URL` in `frontend/.env` when the API is not on `http://localhost:5005`.
 
-**3. Smoke-test RBAC**
+**3. Tests and benchmark**
+
+```bash
+cd backend
+npm test                    # 15 API tests + coverage, no database needed
+npm run bench               # auth-path latency
+```
+
+**4. Smoke-test against a running API**
 
 ```bash
 cd backend
@@ -117,7 +164,8 @@ gradintern/
 │   ├── middleware/verifyToken.js   # Bearer token -> req.user
 │   ├── models/                     # User (grad | recruiter), Listing
 │   ├── routes/                     # auth, listings (RBAC + validation)
-│   ├── scripts/                    # seed + smoke tests
+│   ├── scripts/                    # seed, smoke tests, auth benchmark
+│   ├── test/                       # node:test API suite
 │   └── server.js
 ├── frontend/
 │   └── src/
@@ -132,7 +180,6 @@ gradintern/
 - [ ] Applications collection so "Apply" persists per user
 - [ ] Recruiter dashboard to edit and close listings
 - [ ] Rate limiting and `helmet` on the API
-- [ ] Jest + Supertest suite for the auth and RBAC paths
 - [ ] Deploy (Render for the API, Vercel for the client)
 
 ## 📄 License
