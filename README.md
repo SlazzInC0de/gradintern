@@ -22,6 +22,10 @@ Graduates browse and apply. Recruiters post roles. The API enforces who can do w
 
 ---
 
+**Contents:** [Features](#-features) · [Access matrix](#-access-matrix) · [Architecture](#️-architecture) · [Tests and evidence](#-tests-and-evidence) · [Design decisions](#-design-decisions) · [Screenshots](#-screenshots) · [Run locally](#-run-locally) · [Environment variables](#️-environment-variables) · [Project structure](#-project-structure) · [Roadmap](#️-roadmap) · [Security and privacy](#-security-and-privacy) · [License](#-license)
+
+---
+
 ## ✨ Features
 
 - 🔐 **JWT authentication** with bcrypt-hashed passwords and 1-day tokens
@@ -181,6 +185,13 @@ gradintern/
 - [ ] Recruiter dashboard to edit and close listings
 - [ ] Rate limiting and `helmet` on the API
 - [ ] Deploy (Render for the API, Vercel for the client)
+
+## 🔒 Security and privacy
+
+- Passwords are hashed with bcrypt, tokens expire after 1 day, and every write route is checked by role on the server.
+- Secrets (`MONGO_URI`, `JWT_SECRET`) live only in `backend/.env`, never in the repo.
+- [PRIVACY.md](PRIVACY.md) explains what user data is stored (name, email, role) and how to get it deleted.
+- Found a vulnerability? Please report it privately as described in [SECURITY.md](SECURITY.md).
 
 ## 📄 License
 
